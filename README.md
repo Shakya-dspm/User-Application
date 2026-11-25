@@ -1,69 +1,66 @@
-# peopleOS — User Management Demo
+# PeopleDesk - User Management
 
-A responsive user management application built with React and Vite. It simulates the supplied user API entirely in the browser, using LocalStorage for users, sessions, and password recovery. No backend or network API is used.
+A responsive, static user management demo built with semantic HTML, custom CSS, vanilla JavaScript modules, Bootstrap 5, and browser LocalStorage. There is no backend, framework, package manager, or build step.
 
 ## Features
 
-- Registration, sign in, simulated access/refresh sessions, and sign out
-- Dashboard statistics, recently joined members, and quick actions
-- Searchable, paginated directory with configurable page size
-- Profile and password management
-- Local demo OTP recovery flow with expiry and attempt limits
-- Seeded sample data, responsive layouts, and SPA-ready Vercel rewrites
-
-## Stack
-
-React 18, Vite 6, JavaScript, React Router, Lucide React, CSS, and browser LocalStorage.
+- Login, registration, client-side access and refresh token simulation, and logout.
+- Dashboard statistics, recent accounts, profile, and password changes.
+- Searchable, paginated user directory.
+- Demonstration password recovery with an expiring, attempt-limited OTP.
+- Eight initialized demo accounts and a reset demo data action.
+- Responsive navigation and layouts for small screens.
 
 ## Run locally
 
-Requires Node.js 20 or newer.
+Password hashing uses Web Crypto, so serve the folder from `localhost` or HTTPS. In VS Code, install/use Live Server and open `index.html` with **Open with Live Server**. Any static HTTP server is also suitable. Do not open the HTML file directly with `file://`.
 
-```sh
-npm install
-npm run dev
-```
+Demo sign in:
 
-Open the local URL printed by Vite. Create a production build with `npm run build`; preview it with `npm run preview`.
+| Email | Password |
+| --- | --- |
+| `admin@example.com` | `Admin@123` |
 
-## Demo accounts
+There are seven additional accounts. Their passwords are `Olivia@123`, `Noah@123`, `Amara@123`, `Leo@12345`, `Maya@12345`, `Ethan@123`, and `Sofia@123` respectively, matching the account names shown in the demo data.
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@example.com` | `Admin@123` |
-| Member | `noah@example.com` | `Demo@123` |
-
-The login page includes a demo account shortcut. Seed users are created the first time the app runs and are not replaced on subsequent visits. The app includes a reset demonstration data option in the storage utility (`initializeStorage(true)`) for development.
-
-## Password recovery
-
-Use a registered email on the forgot password page. Since there is no email service, the generated six digit code appears in an in-app demonstration notification. The code expires after five minutes and allows up to five attempts.
-
-## LocalStorage and security
-
-The demo stores user records, demo passwords, simulated tokens, and reset state in browser LocalStorage. Tokens are opaque demonstration values, not signed JWTs. Expired access tokens are renewed locally while the session record remains present. This is not real authentication and does not protect sensitive information. Do not use real personal data or passwords. A production application needs a secure server, hashed passwords, signed tokens, and server delivered recovery codes.
-
-Storage keys are `peopleos.users`, `peopleos.session`, and `peopleos.passwordReset`. Malformed JSON is discarded safely. User and auth logic lives in `src/services/storage.js`; field validation is in `src/utils/validation.js`.
-
-## Project layout
+## Structure
 
 ```text
-src/
-  App.jsx                 Routes, screens, and reusable interface elements
-  main.jsx                App entry and sample data initialization
-  services/storage.js     Local user, session, and reset workflows
-  utils/validation.js     Email and password validation
-  styles.css              Responsive application styling
+index.html                 Login
+register.html              Registration
+forgot-password.html       Request demo OTP
+verify-otp.html             Verify demo OTP
+reset-password.html        Reset password
+dashboard.html             Overview
+users.html                 Searchable directory
+profile.html               Current user profile
+change-password.html       Update password
+404.html                   Not found
+assets/css/style.css       Shared visual system and responsive styles
+assets/js/app.js           Page rendering and event wiring
+assets/js/auth.js          Session and authentication operations
+assets/js/token.js         Simulated access/refresh token lifecycle
+assets/js/storage.js       User LocalStorage operations and demo setup
+assets/js/password.js      Web Crypto password hashing and validation
+assets/js/recovery.js      Demonstration OTP flow
+assets/js/users.js         Search and pagination
+assets/js/config.js        Storage keys and sample records
 ```
 
-## Deploy to Vercel
+## Local data
 
-Import the GitHub repository in Vercel. Use `npm run build` as the build command and `dist` as the output directory. `vercel.json` rewrites application routes to `index.html` so client side routes also work when refreshed. The app needs no environment variables.
+The app uses `peopledesk.users`, `peopledesk.session`, and `peopledesk.reset` in LocalStorage. New passwords are salted and hashed with the browser Web Crypto SHA-256 API. The login page explains the demo credentials. Use **Reset demo data** in the sidebar to clear local accounts/session state and regenerate the original eight accounts.
+
+Forgot-password creates a code locally and displays it on the verification page. No message is sent. The code expires after ten minutes and has a maximum of five verification attempts.
+
+## Security limitations
+
+This application is a portfolio demonstration, not a system for real customer accounts. LocalStorage can be read or changed by the user, and browser-only checks cannot provide trusted authentication or authorization. The simulated random tokens are not signed JWTs and are not sent to any API. Client-side password hashing does not replace a server-side password KDF and secure account service. Do not store real personal information or reuse production credentials here.
+
+## Deployment
+
+The site is static and can be deployed directly to Vercel with no build command and no output directory. Import the repository, choose `main` as the production branch, and leave the framework preset as **Other**. Vercel serves the root HTML pages and `assets/` paths directly and recognizes the custom `404.html` page. The application can also be hosted on any static host with the same file layout.
 
 ## Git workflow
 
-The repository uses `main` for production and `dev` for integration. Feature work is developed on focused `feature/*` branches, merged into `dev`, and promoted to `main` after the production build is verified. Releases use semantic tags (the first release target is `v1.0.0`).
-
-## Limitations
-
-All data belongs to the current browser profile and device. Clearing browser storage removes it. Passwords, sessions, and OTPs are only simulated and can be inspected or changed by the user. This portfolio demo must not be used to manage real users.
+The repository uses `main` for production and `dev` for integration, with feature branches for focused work. Use Conventional Commit messages. The earlier framework-based files have been removed from `dev`; this version is a static website with no build step.

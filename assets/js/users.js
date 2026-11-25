@@ -1,0 +1,2 @@
+import { getUsers } from './storage.js';
+export function searchUsers(query,page=1,pageSize=8) { const term=query.trim().toLowerCase(); const all=getUsers().filter(user=>`${user.name} ${user.email} ${user.id}`.toLowerCase().includes(term)).sort((a,b)=>a.name.localeCompare(b.name)); const pages=Math.max(1,Math.ceil(all.length/pageSize)); const current=Math.min(Math.max(1,page),pages); return { users:all.slice((current-1)*pageSize,current*pageSize),total:all.length,pages,current }; }

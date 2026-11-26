@@ -76,29 +76,71 @@ async function renderDashboard() {
 }
 
 function renderUserRows(rows) {
-  if (!rows.length) return '<tr><td colspan="5"><div class="empty-state"><span><i class="bi bi-person-x"></i></span><strong>No users found</strong><p>Try a different search.</p></div></td></tr>';
-  return rows.map(row => `<tr><td><div class="person-cell"><span class="avatar">${esc((row.fullName || row.userName || '?').slice(0, 1).toUpperCase())}</span><span><strong>${esc(row.fullName || 'Unnamed user')}</strong><small>${esc(row.userName)}</small></span></div></td><td>${esc(row.emailId || '—')}</td><td>${esc(row.role || '—')}</td><td>${esc(row.projectName || '—')}</td><td>${date(row.createdDate)}</td></tr>`).join('');
+  if (!rows.length) return '<tr><td colspan="5"><div class="empty-state"><span><i class="bi bi-person-x"></i></span><strong>No users found</strong><p>Try a different search or filter.</p></div></td></tr>';
+  return rows.map((row, index) => `<tr><td><div class="person-cell"><span class="avatar">${esc((row.fullName || row.userName || '?').slice(0, 1).toUpperCase())}</span><span><button class="user-detail-link" type="button" data-user-index="${index}">${esc(row.fullName || 'Unnamed user')}</button><small>${esc(row.userName)}</small></span></div></td><td>${esc(row.emailId || '—')}</td><td>${esc(row.role || '—')}</td><td>${esc(row.projectName || '—')}</td><td>${date(row.createdDate)}</td></tr>`).join('');
+}
+
+function renderUserDetails(row) {
+  const fields = [
+    ['Full name', row.fullName], ['Username', row.userName], ['Email', row.emailId],
+    ['Role', row.role], ['Project', row.projectName], ['User ID', row.userId], ['Created', date(row.createdDate)]
+  ];
+  return `<div class="user-detail-grid">${fields.filter(([, value]) => value !== '' && value != null).map(([label, value]) => `<div class="detail-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}</div>`;
 }
 
 function renderUsers() {
-  shell('users', 'Users', 'Search and browse user records returned by the API.', `<section class="panel table-panel"><div class="table-tools"><label class="search-box"><i class="bi bi-search"></i><input id="search" type="search" placeholder="Search users…" aria-label="Search users"></label><label class="page-size-label">Page size <select id="page-size"><option>20</option><option>10</option><option>50</option></select></label></div><div id="users-error" class="form-alert" role="alert" hidden></div><div class="table-responsive"><table class="table user-table"><thead><tr><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>PROJECT</th><th>CREATED</th></tr></thead><tbody id="user-rows"><tr><td colspan="5">Loading users…</td></tr></tbody></table></div><div class="table-pagination"><span id="page-info"></span><div><button id="prev" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button><span id="page-number"></span><button id="next" aria-label="Next page"><i class="bi bi-chevron-right"></i></button></div></div></section><p class="field-hint">Credential and refresh-token fields are discarded by the client mapper and never shown in the page.</p>`);
-  let pageNumber = 1; let timer;
+  shell('users', 'Users', 'Search records and filter by role or project.', `<section class="panel table-panel"><div class="table-tools"><label class="search-box"><i class="bi bi-search"></i><input id="search" type="search" placeholder="Search name, email, role, or project" aria-label="Search users"></label><label class="page-size-label">Role <select id="role-filter" aria-label="Filter by role"><option value="">All roles</option></select></label><label class="page-size-label">Project <select id="project-filter" aria-label="Filter by project"><option value="">All projects</option></select></label><label class="page-size-label">Page size <select id="page-size"><option>20</option><option>10</option><option>50</option></select></label><button class="btn btn-outline-primary export-users" id="export-users" type="button"><i class="bi bi-download"></i> Export page</button></div><div id="users-error" class="form-alert" role="alert" hidden></div><div class="table-responsive"><table class="table user-table"><thead><tr><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>PROJECT</th><th>CREATED</th></tr></thead><tbody id="user-rows"><tr><td colspan="5">Loading users…</td></tr></tbody></table></div><div class="table-pagination"><span id="page-info"></span><div><button id="prev" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button><span id="page-number"></span><button id="next" aria-label="Next page"><i class="bi bi-chevron-right"></i></button></div></div></section><dialog class="user-detail-dialog" id="user-detail-dialog"><div class="panel-heading"><div><div class="eyebrow">USER RECORD</div><h3 id="user-detail-title">User details</h3></div><button class="detail-close" id="user-detail-close" type="button" aria-label="Close details"><i class="bi bi-x-lg"></i></button></div><div id="user-detail-content"></div></dialog><p class="field-hint">Filters use the API text search and only safe profile fields are shown or exported. Passwords and tokens are excluded.</p>`);
+  let pageNumber = 1; let timer; let currentRows = [];
+  const roleFilter = document.querySelector('#role-filter'); const projectFilter = document.querySelector('#project-filter');
+  const setOptions = (select, values, label) => {
+    const selected = select.value;
+    select.innerHTML = `<option value="">All ${label}</option>${values.map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('')}`;
+    if (values.includes(selected)) select.value = selected;
+  };
   const draw = async () => {
-    const query = document.querySelector('#search').value; const size = Number(document.querySelector('#page-size').value); const rows = document.querySelector('#user-rows');
+    const search = document.querySelector('#search').value.trim();
+    const role = roleFilter.value; const project = projectFilter.value;
+    const query = role || project || search;
+    const size = Number(document.querySelector('#page-size').value); const rows = document.querySelector('#user-rows');
     rows.innerHTML = '<tr><td colspan="5">Loading users…</td></tr>'; document.querySelector('#users-error').hidden = true;
     try {
-      const result = await findUsers({ query, page: pageNumber, pageSize: size }); pageNumber = result.page;
+      const result = await findUsers({ query, page: pageNumber, pageSize: size }); pageNumber = result.page; currentRows = result.users;
+      setOptions(roleFilter, [...new Set(result.users.map(row => row.role).filter(Boolean))].sort(), 'roles');
+      setOptions(projectFilter, [...new Set(result.users.map(row => row.projectName).filter(Boolean))].sort(), 'projects');
       rows.innerHTML = renderUserRows(result.users);
       const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
       document.querySelector('#page-info').textContent = `${result.total.toLocaleString()} matching records`;
       document.querySelector('#page-number').textContent = `${pageNumber} / ${pages}`;
       document.querySelector('#prev').disabled = pageNumber <= 1; document.querySelector('#next').disabled = pageNumber >= pages;
-    } catch (error) { rows.innerHTML = ''; const box = document.querySelector('#users-error'); box.textContent = error.message; box.hidden = false; }
+      document.querySelectorAll('[data-user-index]').forEach(button => button.onclick = () => {
+        const selected = currentRows[Number(button.dataset.userIndex)];
+        document.querySelector('#user-detail-title').textContent = selected.fullName || selected.userName || 'User details';
+        document.querySelector('#user-detail-content').innerHTML = renderUserDetails(selected);
+        document.querySelector('#user-detail-dialog').showModal();
+      });
+    } catch (error) { currentRows = []; rows.innerHTML = ''; const box = document.querySelector('#users-error'); box.textContent = error.message; box.hidden = false; }
   };
-  document.querySelector('#search').oninput = () => { clearTimeout(timer); timer = setTimeout(() => { pageNumber = 1; draw(); }, 300); };
-  document.querySelector('#page-size').onchange = () => { pageNumber = 1; draw(); };
+  const resetAndDraw = () => { pageNumber = 1; draw(); };
+  document.querySelector('#search').oninput = () => { roleFilter.value = ''; projectFilter.value = ''; clearTimeout(timer); timer = setTimeout(resetAndDraw, 300); };
+  roleFilter.onchange = () => { projectFilter.value = ''; document.querySelector('#search').value = ''; resetAndDraw(); };
+  projectFilter.onchange = () => { roleFilter.value = ''; document.querySelector('#search').value = ''; resetAndDraw(); };
+  document.querySelector('#page-size').onchange = resetAndDraw;
   document.querySelector('#prev').onclick = () => { pageNumber -= 1; draw(); };
   document.querySelector('#next').onclick = () => { pageNumber += 1; draw(); };
+  document.querySelector('#user-detail-close').onclick = () => document.querySelector('#user-detail-dialog').close();
+  document.querySelector('#user-detail-dialog').onclick = event => { if (event.target === event.currentTarget) event.currentTarget.close(); };
+  document.querySelector('#export-users').onclick = () => {
+    const columns = [['Full name', 'fullName'], ['Username', 'userName'], ['Email', 'emailId'], ['Role', 'role'], ['Project', 'projectName'], ['Created', 'createdDate'], ['User ID', 'userId']];
+    const cell = value => {
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const csv = [columns.map(([label]) => cell(label)).join(','), ...currentRows.map(row => columns.map(([, key]) => cell(row[key])).join(','))].join('\r\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = `users-page-${pageNumber}.csv`; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   draw();
 }
 

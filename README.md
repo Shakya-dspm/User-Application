@@ -1,66 +1,30 @@
-# PeopleDesk - User Management
+# UserDesk
 
-A responsive, static user management demo built with semantic HTML, custom CSS, vanilla JavaScript modules, Bootstrap 5, and browser LocalStorage. There is no backend, framework, package manager, or build step.
+A static user management interface connected to the FreeProjectAPI User App service. It uses HTML, CSS, and browser JavaScript modules; no build step is required.
 
 ## Features
 
-- Login, registration, client-side access and refresh token simulation, and logout.
-- Dashboard statistics, recent accounts, profile, and password changes.
-- Searchable, paginated user directory.
-- Demonstration password recovery with an expiring, attempt-limited OTP.
-- Eight initialized demo accounts and a reset demo data action.
-- Responsive navigation and layouts for small screens.
+- Sign in and create users through the API.
+- Request and verify a password reset code through the API.
+- Browse, search, and paginate API user records.
+- View an API-backed record count and recent users.
+- Change the signed-in account password through the API.
+- Responsive navigation and loading, empty, and error states.
 
 ## Run locally
 
-Password hashing uses Web Crypto, so serve the folder from `localhost` or HTTPS. In VS Code, install/use Live Server and open `index.html` with **Open with Live Server**. Any static HTTP server is also suitable. Do not open the HTML file directly with `file://`.
+Serve this folder over localhost or HTTPS (for example, with VS Code Live Server) and open `index.html`. The browser must be able to reach `https://api.freeprojectapi.com` and the service must allow cross-origin requests.
 
-Demo sign in:
+## API integration
 
-| Email | Password |
-| --- | --- |
-| `admin@example.com` | `Admin@123` |
+Base URL: `https://api.freeprojectapi.com/api/UserApp`
 
-There are seven additional accounts. Their passwords are `Olivia@123`, `Noah@123`, `Amara@123`, `Leo@12345`, `Maya@12345`, `Ethan@123`, and `Sofia@123` respectively, matching the account names shown in the demo data.
+The app calls `POST /login`, `POST /CreateNewUser`, `GET /searchUsers`, `POST /send-reset-otp`, `POST /verify-otp-reset-password`, and `PUT /update-password/{customerId}`. Login uses `emailId` and `password`. User creation sends `userId`, `fullName`, `emailId`, and `password`. Search accepts `searchText`, `pageNumber`, and `pageSize`. OTP reset sends `emailId` as a query parameter, then `email`, `otp`, and `newPassword` in its verification request. Password updates send `existingPassword` and `newPassword`.
 
-## Structure
+The account session is kept in `sessionStorage`; no user list is copied into the repository or cached locally. The client maps API records to a small safe view model and drops `password`, `refreshToken`, and other unneeded fields before rendering.
 
-```text
-index.html                 Login
-register.html              Registration
-forgot-password.html       Request demo OTP
-verify-otp.html             Verify demo OTP
-reset-password.html        Reset password
-dashboard.html             Overview
-users.html                 Searchable directory
-profile.html               Current user profile
-change-password.html       Update password
-404.html                   Not found
-assets/css/style.css       Shared visual system and responsive styles
-assets/js/app.js           Page rendering and event wiring
-assets/js/auth.js          Session and authentication operations
-assets/js/token.js         Simulated access/refresh token lifecycle
-assets/js/storage.js       User LocalStorage operations and demo setup
-assets/js/password.js      Web Crypto password hashing and validation
-assets/js/recovery.js      Demonstration OTP flow
-assets/js/users.js         Search and pagination
-assets/js/config.js        Storage keys and sample records
-```
+## API data limitation
 
-## Local data
+The live `searchUsers` response currently contains password and refresh-token properties, including plaintext values. The browser must receive the API response before the client can discard those fields, so this static frontend cannot make that response confidential. Do not use real accounts or personal information with this service. A secure deployment requires the API provider to remove secrets from user-list responses and enforce suitable authorization on search. The API's `GetAllUsers` route currently requires a bearer token; the interface uses the documented search route instead.
 
-The app uses `peopledesk.users`, `peopledesk.session`, and `peopledesk.reset` in LocalStorage. New passwords are salted and hashed with the browser Web Crypto SHA-256 API. The login page explains the demo credentials. Use **Reset demo data** in the sidebar to clear local accounts/session state and regenerate the original eight accounts.
-
-Forgot-password creates a code locally and displays it on the verification page. No message is sent. The code expires after ten minutes and has a maximum of five verification attempts.
-
-## Security limitations
-
-This application is a portfolio demonstration, not a system for real customer accounts. LocalStorage can be read or changed by the user, and browser-only checks cannot provide trusted authentication or authorization. The simulated random tokens are not signed JWTs and are not sent to any API. Client-side password hashing does not replace a server-side password KDF and secure account service. Do not store real personal information or reuse production credentials here.
-
-## Deployment
-
-The site is static and can be deployed directly to Vercel with no build command and no output directory. Import the repository, choose `main` as the production branch, and leave the framework preset as **Other**. Vercel serves the root HTML pages and `assets/` paths directly and recognizes the custom `404.html` page. The application can also be hosted on any static host with the same file layout.
-
-## Git workflow
-
-The repository uses `main` for production and `dev` for integration, with feature branches for focused work. Use Conventional Commit messages. The earlier framework-based files have been removed from `dev`; this version is a static website with no build step.
+The password recovery flow uses the request schemas from the live OpenAPI document at `https://api.freeprojectapi.com/swagger/v1/swagger.json`. No demo credentials or local authentication are included.

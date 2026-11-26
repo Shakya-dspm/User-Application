@@ -1,1 +1,0 @@
-export function notify(message,type='success') { const root=document.querySelector('#toast-root'); const toast=document.createElement('div'); toast.className=`app-toast ${type}`; toast.textContent=message; root.append(toast); setTimeout(()=>toast.remove(),4200); }

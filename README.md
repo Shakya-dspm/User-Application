@@ -1,4 +1,4 @@
-# UserDesk
+﻿# UserDesk
 
 A static user management interface connected to the FreeProjectAPI User App service. It uses HTML, CSS, and browser JavaScript modules; no build step is required.
 
@@ -6,7 +6,9 @@ A static user management interface connected to the FreeProjectAPI User App serv
 
 - Sign in and create users through the API.
 - Request and verify a password reset code through the API.
-- Browse, search, and paginate API user records.
+- Browse, search, and paginate API user records, including role and project filters.
+- Open safe user details and export the current page to CSV.
+- Refresh expired API sessions when the service returns an authorization error.
 - View an API-backed record count and recent users.
 - Change the signed-in account password through the API.
 - Responsive navigation and loading, empty, and error states.
@@ -19,7 +21,7 @@ Serve this folder over localhost or HTTPS (for example, with VS Code Live Server
 
 Base URL: `https://api.freeprojectapi.com/api/UserApp`
 
-The app calls `POST /login`, `POST /CreateNewUser`, `GET /searchUsers`, `POST /send-reset-otp`, `POST /verify-otp-reset-password`, and `PUT /update-password/{customerId}`. Login uses `emailId` and `password`. User creation sends `userId`, `fullName`, `emailId`, and `password`. Search accepts `searchText`, `pageNumber`, and `pageSize`. OTP reset sends `emailId` as a query parameter, then `email`, `otp`, and `newPassword` in its verification request. Password updates send `existingPassword` and `newPassword`.
+The app calls `POST /login`, `POST /refresh`, `POST /CreateNewUser`, `GET /searchUsers`, `POST /send-reset-otp`, `POST /verify-otp-reset-password`, and `PUT /update-password/{customerId}`. Login uses `emailId` and `password`. User creation sends `userId`, `fullName`, `emailId`, and `password`. Search accepts `searchText`, `pageNumber`, and `pageSize`; role and project filters use the API text search. The CSV export contains only the current page and excludes passwords and tokens. Session refresh sends `emailId`, `token`, and `refreshToken` to `/refresh` after an authenticated request expires. OTP reset sends `emailId` as a query parameter, then `email`, `otp`, and `newPassword` in its verification request. Password updates send `existingPassword` and `newPassword`.
 
 The account session is kept in `sessionStorage`; no user list is copied into the repository or cached locally. The client maps API records to a small safe view model and drops `password`, `refreshToken`, and other unneeded fields before rendering.
 

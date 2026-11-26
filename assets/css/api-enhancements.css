@@ -1,0 +1,94 @@
+.table-tools {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.table-tools .search-box {
+  flex: 1 1 240px;
+  width: auto;
+}
+
+.table-tools .page-size-label {
+  gap: 8px;
+}
+
+.table-tools .page-size-label select {
+  max-width: 180px;
+}
+
+.export-users {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.user-detail-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #343d4b;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.user-detail-link:hover {
+  color: var(--purple);
+  text-decoration: underline;
+}
+
+.user-detail-dialog {
+  width: min(520px, calc(100% - 28px));
+  max-height: min(80vh, 680px);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink);
+  box-shadow: 0 24px 80px #17203338;
+}
+
+.user-detail-dialog::backdrop {
+  background: #1d2538a6;
+  backdrop-filter: blur(2px);
+}
+
+.user-detail-dialog .panel-heading {
+  margin-bottom: 16px;
+}
+
+.user-detail-dialog .panel-heading h3 {
+  overflow-wrap: anywhere;
+}
+
+.detail-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: #f3f4f7;
+  color: #687181;
+}
+
+.user-detail-grid .detail-row {
+  align-items: flex-start;
+}
+
+.user-detail-grid .detail-row strong {
+  max-width: 65%;
+}
+
+@media (max-width: 760px) {
+  .table-tools .search-box {
+    flex-basis: 100%;
+  }
+
+  .table-tools .page-size-label {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+
+  .table-tools .page-size-label select {
+    max-width: 125px;
+  }
+}
